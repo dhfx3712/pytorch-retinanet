@@ -43,24 +43,32 @@ class PyramidFeatures(nn.Module):
 
     def forward(self, inputs):
         C3, C4, C5 = inputs
-
+        print (f'c5 : {C5.shape}  c4 : {C4.shape}  c3 : {C3.shape}')
         P5_x = self.P5_1(C5)
+        print (f'p5_1 : {P5_x.shape}')
         P5_upsampled_x = self.P5_upsampled(P5_x)
+        print (f'p5_up : {P5_upsampled_x.shape}')
         P5_x = self.P5_2(P5_x)
+        print (f'p5_2 : {P5_x.shape}')
 
         P4_x = self.P4_1(C4)
         P4_x = P5_upsampled_x + P4_x
         P4_upsampled_x = self.P4_upsampled(P4_x)
         P4_x = self.P4_2(P4_x)
+        print (f'p4_up : {P4_upsampled_x.shape}  p4_2 : {P4_x.shape}')
 
         P3_x = self.P3_1(C3)
         P3_x = P3_x + P4_upsampled_x
+        print(f'p3_cat : {P3_x.shape}')
         P3_x = self.P3_2(P3_x)
+        print(f'p3_up : {P3_x.shape} ')
 
         P6_x = self.P6(C5)
+        print(f'p6 : {P6_x.shape} ')
 
         P7_x = self.P7_1(P6_x)
         P7_x = self.P7_2(P7_x)
+        print(f'p7 : {P7_x.shape} ')
 
         return [P3_x, P4_x, P5_x, P6_x, P7_x]
 
@@ -162,14 +170,16 @@ class ResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
         self.layer1 = self._make_layer(block, 64, layers[0])
-        self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
-        self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
-        self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
+        self.layer2 = self._make_layer(block, 128, layers[1], stride=2) #512
+        self.layer3 = self._make_layer(block, 256, layers[2], stride=2) #1024
+        self.layer4 = self._make_layer(block, 512, layers[3], stride=2) #2048
 
         if block == BasicBlock:
             fpn_sizes = [self.layer2[layers[1] - 1].conv2.out_channels, self.layer3[layers[2] - 1].conv2.out_channels,
                          self.layer4[layers[3] - 1].conv2.out_channels]
         elif block == Bottleneck:
+            print(f'layer2 : {self.layer2[layers[1] - 1].conv3.out_channels}  layer3 : {self.layer3[layers[2] - 1].conv3.out_channels} ' 
+                  f'layer4 : {self.layer4[layers[3] - 1].conv3.out_channels}')
             fpn_sizes = [self.layer2[layers[1] - 1].conv3.out_channels, self.layer3[layers[2] - 1].conv3.out_channels,
                          self.layer4[layers[3] - 1].conv3.out_channels]
         else:
@@ -245,7 +255,7 @@ class ResNet(nn.Module):
         x3 = self.layer3(x2)
         x4 = self.layer4(x3)
 
-        features = self.fpn([x2, x3, x4])
+        features = self.fpn([x2, x3, x4]) #PyramidFeatures
 
         regression = torch.cat([self.regressionModel(feature) for feature in features], dim=1)
 
