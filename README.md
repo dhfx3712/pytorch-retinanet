@@ -1,185 +1,122 @@
-# pytorch-retinanet
-
-![img3](https://github.com/yhenon/pytorch-retinanet/blob/master/images/3.jpg)
-![img5](https://github.com/yhenon/pytorch-retinanet/blob/master/images/5.jpg)
-
-Pytorch  implementation of RetinaNet object detection as described in [Focal Loss for Dense Object Detection](https://arxiv.org/abs/1708.02002) by Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He and Piotr Dollár.
-
-This implementation is primarily designed to be easy to read and simple to modify.
-
-## Results
-Currently, this repo achieves 33.5% mAP at 600px resolution with a Resnet-50 backbone. The published result is 34.0% mAP. The difference is likely due to the use of Adam optimizer instead of SGD with weight decay.
-
-## Installation
-
-1) Clone this repo
-
-2) Install the required packages:
-
-```
-apt-get install tk-dev python-tk
-```
-
-3) Install the python packages:
-	
-```
-pip install pandas
-pip install pycocotools
-pip install opencv-python
-pip install requests
-
-```
-
-## Training
-
-The network can be trained using the `train.py` script. Currently, two dataloaders are available: COCO and CSV. For training on coco, use
-
-```
-python train.py --dataset coco --coco_path ../coco --depth 50
-```
-
-For training using a custom dataset, with annotations in CSV format (see below), use
-
-```
-python train.py --dataset csv --csv_train <path/to/train_annots.csv>  --csv_classes <path/to/train/class_list.csv>  --csv_val <path/to/val_annots.csv>
-```
-
-Note that the --csv_val argument is optional, in which case no validation will be performed.
-
-## Pre-trained model
-
-A pre-trained model is available at: 
-- https://drive.google.com/open?id=1yLmjq3JtXi841yXWBxst0coAgR26MNBS (this is a pytorch state dict)
-
-The state dict model can be loaded using:
-
-```
-retinanet = model.resnet50(num_classes=dataset_train.num_classes(),)
-retinanet.load_state_dict(torch.load(PATH_TO_WEIGHTS))
-```
-
-## Validation
-
-Run `coco_validation.py` to validate the code on the COCO dataset. With the above model, run:
-
-`python coco_validation.py --coco_path ~/path/to/coco --model_path /path/to/model/coco_resnet_50_map_0_335_state_dict.pt`
-
-
-This produces the following results:
-
-```
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.335
- Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.499
- Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.357
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.167
- Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.369
- Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.466
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.282
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.429
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.458
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = 0.255
- Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.508
- Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.597
-```
-
-For CSV Datasets (more info on those below), run the following script to validate:
-
-`python csv_validation.py --csv_annotations_path path/to/annotations.csv --model_path path/to/model.pt --images_path path/to/images_dir --class_list_path path/to/class_list.csv   (optional) iou_threshold iou_thres (0<iou_thresh<1) `
-
-It produces following resullts:
-
-```
-label_1 : (label_1_mAP)
-Precision :  ...
-Recall:  ...
-
-label_2 : (label_2_mAP)
-Precision :  ...
-Recall:  ...
-```
-
-You can also configure csv_eval.py script to save the precision-recall curve on disk.
 
 
 
-## Visualization
+(tf2.7_bac) admin@bogon pytorch-retinanet % python train.py --dataset coco --coco_path /Users/admin/data --depth 50
+CUDA available: False
+loading annotations into memory...
+Done (t=0.05s)
+creating index...
+index created!
+loading annotations into memory...
+Done (t=0.09s)
+creating index...
+index created!
+layer2 : 512  layer3 : 1024 layer4 : 2048
+Num training images: 2501
+c5 : torch.Size([2, 2048, 20, 26])  c4 : torch.Size([2, 1024, 40, 52])  c3 : torch.Size([2, 512, 80, 104])
+p5_1 : torch.Size([2, 256, 20, 26])
+p5_up : torch.Size([2, 256, 40, 52])
+p5_2 : torch.Size([2, 256, 20, 26])
+p4_up : torch.Size([2, 256, 80, 104])  p4_2 : torch.Size([2, 256, 40, 52])
+p3_cat : torch.Size([2, 256, 80, 104])
+p3_up : torch.Size([2, 256, 80, 104]) 
+p6 : torch.Size([2, 256, 10, 13]) 
+p7 : torch.Size([2, 256, 5, 7]) 
+fpn_feature : 5 ,torch.Size([2, 256, 80, 104]),torch.Size([2, 256, 40, 52]),torch.Size([2, 256, 20, 26]),torch.Size([2, 256, 10, 13])
+regression : torch.Size([2, 99765, 4])
+classification : torch.Size([2, 99765, 80])
+anchor_input : torch.Size([640, 832]),torch.Size([2, 3, 640, 832]),[3, 4, 5, 6, 7]
+anchor_shapes : [array([ 80, 104]), array([40, 52]), array([20, 26]), array([10, 13]), array([5, 7])]
+scale_anchors : [[ 0.          0.         32.         32.        ]
+ [ 0.          0.         40.3174736  40.3174736 ]
+ [ 0.          0.         50.79683366 50.79683366]
+ [ 0.          0.         32.         32.        ]
+ [ 0.          0.         40.3174736  40.3174736 ]
+ [ 0.          0.         50.79683366 50.79683366]
+ [ 0.          0.         32.         32.        ]
+ [ 0.          0.         40.3174736  40.3174736 ]
+ [ 0.          0.         50.79683366 50.79683366]]
+areas_anchor : [1024.         1625.49867722 2580.31831018 1024.         1625.49867722
+ 2580.31831018 1024.         1625.49867722 2580.31831018]
+all_anchor : 74880
+scale_anchors : [[  0.           0.          64.          64.        ]
+ [  0.           0.          80.63494719  80.63494719]
+ [  0.           0.         101.59366733 101.59366733]
+ [  0.           0.          64.          64.        ]
+ [  0.           0.          80.63494719  80.63494719]
+ [  0.           0.         101.59366733 101.59366733]
+ [  0.           0.          64.          64.        ]
+ [  0.           0.          80.63494719  80.63494719]
+ [  0.           0.         101.59366733 101.59366733]]
+areas_anchor : [ 4096.          6501.99470886 10321.27324074  4096.
+  6501.99470886 10321.27324074  4096.          6501.99470886
+ 10321.27324074]
+all_anchor : 93600
+scale_anchors : [[  0.           0.         128.         128.        ]
+ [  0.           0.         161.26989439 161.26989439]
+ [  0.           0.         203.18733465 203.18733465]
+ [  0.           0.         128.         128.        ]
+ [  0.           0.         161.26989439 161.26989439]
+ [  0.           0.         203.18733465 203.18733465]
+ [  0.           0.         128.         128.        ]
+ [  0.           0.         161.26989439 161.26989439]
+ [  0.           0.         203.18733465 203.18733465]]
+areas_anchor : [16384.         26007.97883545 41285.09296296 16384.
+ 26007.97883545 41285.09296296 16384.         26007.97883545
+ 41285.09296296]
+all_anchor : 98280
+scale_anchors : [[  0.           0.         256.         256.        ]
+ [  0.           0.         322.53978877 322.53978877]
+ [  0.           0.         406.3746693  406.3746693 ]
+ [  0.           0.         256.         256.        ]
+ [  0.           0.         322.53978877 322.53978877]
+ [  0.           0.         406.3746693  406.3746693 ]
+ [  0.           0.         256.         256.        ]
+ [  0.           0.         322.53978877 322.53978877]
+ [  0.           0.         406.3746693  406.3746693 ]]
+areas_anchor : [ 65536.         104031.91534179 165140.37185182  65536.
+ 104031.91534179 165140.37185182  65536.         104031.91534179
+ 165140.37185182]
+all_anchor : 99450
+scale_anchors : [[  0.           0.         512.         512.        ]
+ [  0.           0.         645.07957755 645.07957755]
+ [  0.           0.         812.74933861 812.74933861]
+ [  0.           0.         512.         512.        ]
+ [  0.           0.         645.07957755 645.07957755]
+ [  0.           0.         812.74933861 812.74933861]
+ [  0.           0.         512.         512.        ]
+ [  0.           0.         645.07957755 645.07957755]
+ [  0.           0.         812.74933861 812.74933861]]
+areas_anchor : [262144.         416127.66136715 660561.48740728 262144.
+ 416127.66136715 660561.48740728 262144.         416127.66136715
+ 660561.48740728]
+all_anchor : 99765
 
-To visualize the network detection, use `visualize.py`:
-
-```
-python visualize.py --dataset coco --coco_path ../coco --model <path/to/model.pt>
-```
-This will visualize bounding boxes on the validation set. To visualise with a CSV dataset, use:
-
-```
-python visualize.py --dataset csv --csv_classes <path/to/train/class_list.csv>  --csv_val <path/to/val_annots.csv> --model <path/to/model.pt>
-```
-
-## Model
-
-The retinanet model uses a resnet backbone. You can set the depth of the resnet model using the --depth argument. Depth must be one of 18, 34, 50, 101 or 152. Note that deeper models are more accurate but are slower and use more memory.
-
-## CSV datasets
-The `CSVGenerator` provides an easy way to define your own datasets.
-It uses two CSV files: one file containing annotations and one file containing a class name to ID mapping.
-
-### Annotations format
-The CSV file with annotations should contain one annotation per line.
-Images with multiple bounding boxes should use one row per bounding box.
-Note that indexing for pixel values starts at 0.
-The expected format of each line is:
-```
-path/to/image.jpg,x1,y1,x2,y2,class_name
-```
-
-Some images may not contain any labeled objects.
-To add these images to the dataset as negative examples,
-add an annotation where `x1`, `y1`, `x2`, `y2` and `class_name` are all empty:
-```
-path/to/image.jpg,,,,,
-```
-
-A full example:
-```
-/data/imgs/img_001.jpg,837,346,981,456,cow
-/data/imgs/img_002.jpg,215,312,279,391,cat
-/data/imgs/img_002.jpg,22,5,89,84,bird
-/data/imgs/img_003.jpg,,,,,
-```
-
-This defines a dataset with 3 images.
-`img_001.jpg` contains a cow.
-`img_002.jpg` contains a cat and a bird.
-`img_003.jpg` contains no interesting objects/animals.
 
 
-### Class mapping format
-The class name to ID mapping file should contain one mapping per line.
-Each line should use the following format:
-```
-class_name,id
-```
 
-Indexing for classes starts at 0.
-Do not include a background class as it is implicit.
 
-For example:
-```
-cow,0
-cat,1
-bird,2
-```
 
-## Acknowledgements
 
-- Significant amounts of code are borrowed from the [keras retinanet implementation](https://github.com/fizyr/keras-retinanet)
-- The NMS module used is from the [pytorch faster-rcnn implementation](https://github.com/ruotianluo/pytorch-faster-rcnn)
+>>> b = np.array([[1, 2], [3, 4]])
+>>> np.tile(b, 2) #沿X轴复制2倍
+array([[1, 2, 1, 2],
+       [3, 4, 3, 4]])
+>>> np.tile(b, (2, 1))#沿X轴复制1倍（相当于没有复制），再沿Y轴复制2倍
+array([[1, 2],
+       [3, 4],
+       [1, 2],
+       [3, 4]])
 
-## Examples
 
-![img1](https://github.com/yhenon/pytorch-retinanet/blob/master/images/1.jpg)
-![img2](https://github.com/yhenon/pytorch-retinanet/blob/master/images/2.jpg)
-![img4](https://github.com/yhenon/pytorch-retinanet/blob/master/images/4.jpg)
-![img6](https://github.com/yhenon/pytorch-retinanet/blob/master/images/6.jpg)
-![img7](https://github.com/yhenon/pytorch-retinanet/blob/master/images/7.jpg)
-![img8](https://github.com/yhenon/pytorch-retinanet/blob/master/images/8.jpg)
+
+
+np.repeat(1, 5)
+array([1, 1, 1, 1, 1])
+# 1 重复5次
+
+
+
+
+
+

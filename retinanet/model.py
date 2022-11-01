@@ -256,11 +256,11 @@ class ResNet(nn.Module):
         x4 = self.layer4(x3)
 
         features = self.fpn([x2, x3, x4]) #PyramidFeatures
-
+        print (f'fpn_feature : {len(features)} ,{features[0].shape},{features[1].shape},{features[2].shape},{features[3].shape}')
         regression = torch.cat([self.regressionModel(feature) for feature in features], dim=1)
-
+        print (f'regression : {regression.shape}')
         classification = torch.cat([self.classificationModel(feature) for feature in features], dim=1)
-
+        print(f'classification : {classification.shape}')
         anchors = self.anchors(img_batch)
 
         if self.training:
@@ -282,7 +282,7 @@ class ResNet(nn.Module):
 
             for i in range(classification.shape[2]):
                 scores = torch.squeeze(classification[:, :, i])
-                scores_over_thresh = (scores > 0.05)
+                scores_over_thresh = (scores > 0.05) #过滤
                 if scores_over_thresh.sum() == 0:
                     # no boxes to NMS, just continue
                     continue
@@ -290,7 +290,7 @@ class ResNet(nn.Module):
                 scores = scores[scores_over_thresh]
                 anchorBoxes = torch.squeeze(transformed_anchors)
                 anchorBoxes = anchorBoxes[scores_over_thresh]
-                anchors_nms_idx = nms(anchorBoxes, scores, 0.5)
+                anchors_nms_idx = nms(anchorBoxes, scores, 0.5) #非极大抑制
 
                 finalResult[0].extend(scores[anchors_nms_idx])
                 finalResult[1].extend(torch.tensor([i] * anchors_nms_idx.shape[0]))

@@ -11,7 +11,7 @@ class Anchors(nn.Module):
             self.pyramid_levels = [3, 4, 5, 6, 7]
         if strides is None:
             self.strides = [2 ** x for x in self.pyramid_levels]
-        if sizes is None:
+        if sizes is None:# [32,64,128,256,512]
             self.sizes = [2 ** (x + 2) for x in self.pyramid_levels]
         if ratios is None:
             self.ratios = np.array([0.5, 1, 2])
@@ -21,16 +21,18 @@ class Anchors(nn.Module):
     def forward(self, image):
         
         image_shape = image.shape[2:]
+        print (f'anchor_input : {image_shape},image_shap : {image.shape},pyramid_level : {self.pyramid_levels}')
         image_shape = np.array(image_shape)
         image_shapes = [(image_shape + 2 ** x - 1) // (2 ** x) for x in self.pyramid_levels]
-
+        print (f'anchor_shapes : {image_shapes} ')
         # compute anchors over all pyramid levels
-        all_anchors = np.zeros((0, 4)).astype(np.float32)
-
+        all_anchors = np.zeros((0, 4)).astype(np.float32) #all_anchor 初始化 : []
+        print(f'all_anchor 初始化 : {all_anchors}')
         for idx, p in enumerate(self.pyramid_levels):
             anchors         = generate_anchors(base_size=self.sizes[idx], ratios=self.ratios, scales=self.scales)
             shifted_anchors = shift(image_shapes[idx], self.strides[idx], anchors)
             all_anchors     = np.append(all_anchors, shifted_anchors, axis=0)
+            print(f'all_anchor : {len(all_anchors)},{all_anchors[0]}') #图层越大增加数量少
 
         all_anchors = np.expand_dims(all_anchors, axis=0)
 
@@ -56,13 +58,14 @@ def generate_anchors(base_size=16, ratios=None, scales=None):
     # initialize output anchors
     anchors = np.zeros((num_anchors, 4))
 
-    # scale base_size
+    # scale base_size 传入尺寸
     anchors[:, 2:] = base_size * np.tile(scales, (2, len(ratios))).T
-
+    print (f'scale_anchors : {anchors}')
     # compute areas of anchors
     areas = anchors[:, 2] * anchors[:, 3]
+    print (f'areas_anchor : {areas}')
 
-    # correct for ratios
+    # correct for ratios .areas面积不变，按比例求anchor的w，h
     anchors[:, 2] = np.sqrt(areas / np.repeat(ratios, len(scales)))
     anchors[:, 3] = anchors[:, 2] * np.repeat(ratios, len(scales))
 
@@ -106,12 +109,13 @@ def anchors_for_shape(
     return all_anchors
 
 
-def shift(shape, stride, anchors):
+def shift(shape, stride, anchors): #定义偏移量
     shift_x = (np.arange(0, shape[1]) + 0.5) * stride
     shift_y = (np.arange(0, shape[0]) + 0.5) * stride
 
-    shift_x, shift_y = np.meshgrid(shift_x, shift_y)
+    shift_x, shift_y = np.meshgrid(shift_x, shift_y) #返回坐标点
 
+    #对应anchor的4个坐标
     shifts = np.vstack((
         shift_x.ravel(), shift_y.ravel(),
         shift_x.ravel(), shift_y.ravel()
@@ -123,6 +127,7 @@ def shift(shape, stride, anchors):
     # reshape to (K*A, 4) shifted anchors
     A = anchors.shape[0]
     K = shifts.shape[0]
+    #anchor + shift
     all_anchors = (anchors.reshape((1, A, 4)) + shifts.reshape((1, K, 4)).transpose((1, 0, 2)))
     all_anchors = all_anchors.reshape((K * A, 4))
 
